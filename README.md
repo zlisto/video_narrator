@@ -1,70 +1,85 @@
-# Getting Started with Create React App
+# AI Video Narrator
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A React app that adds AI-generated narration to your videos. Upload a video, describe how you want it narrated, and the app uses OpenAI to write and speak the script, then mixes it with your video—all in the browser with no backend.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Upload & analyze** – Upload a video; the app samples 20 frames evenly over the duration for context.
+- **Narration length** – Target length is computed from video duration (100 words per minute) and passed into the prompt.
+- **AI narration text** – Instructions + frame images go to OpenAI’s vision model; you get editable narration text.
+- **AI narration audio** – Text is turned into speech with OpenAI TTS (voice: **nova**).
+- **Audio mixing** – Video-editor style UI with separate volume sliders for video audio and AI narration.
+- **Timeline** – Single timeline; click to seek. Preview plays video + narration in sync (with your volume mix) before export.
+- **Export** – Merge is done with **ffmpeg.wasm** (fast, no real-time playback). Output is MP4. Download uses the name: `videofilename_ai_narration_YYYY-MM-DD_HH-MM-SS.mp4`.
 
-### `npm start`
+## Setup
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. **Install dependencies**
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+   ```bash
+   npm install
+   ```
 
-### `npm test`
+2. **Environment variables**
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+   Create a `.env` in the project root (you can copy from `.env.example`):
 
-### `npm run build`
+   ```env
+   REACT_APP_OPENAI_API_KEY=your_openai_api_key
+   REACT_APP_MODEL=gpt-4o
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+3. **Run the app**
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+   ```bash
+   npm start
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+   Open [http://localhost:3000](http://localhost:3000).
 
-### `npm run eject`
+## Usage
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Narration tab
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+1. **Upload video** – Choose a video file. The app extracts 20 frames and shows progress.
+2. **Instructions** – Type how you want the narration (tone, focus, style). This is injected into the prompt template at `public/prompt_narration.txt` as `{instructions}`. The template also receives `{num_words}` (from video duration at 100 wpm).
+3. **Create Narration Text** – Sends frames + prompt to OpenAI; the result appears in an editable text box.
+4. **Create Narration Audio** – Converts that text to speech with TTS (nova). Use the audio player to listen.
+5. Optionally edit the text and regenerate audio.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Audio Mixing tab
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+1. **Preview** – Shows the source video or, after merge, the final video.
+2. **Time** – Displays current time / total duration.
+3. **Timeline** – Click to seek; video and both audio tracks move together. You hear the mix at the current volume levels (no need to export to preview).
+4. **Tracks** – Two rows:
+   - **Video audio** – Volume slider (0–100%).
+   - **AI Narration** – Volume slider (0–100%).
+5. **Create Video** – Runs ffmpeg.wasm to mix video + both audio tracks and produce an MP4. First run loads the FFmpeg core (~31 MB) once.
+6. **Export** – Downloads the merged file as `videofilename_ai_narration_YYYY-MM-DD_HH-MM-SS.mp4`.
 
-## Learn More
+## Project structure
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- `public/prompt_narration.txt` – Prompt template. Placeholders: `{num_words}`, `{instructions}`.
+- `src/App.js` – Main UI, OpenAI calls, ffmpeg merge, timeline seek/preview.
+- `.env` – `REACT_APP_OPENAI_API_KEY`, `REACT_APP_MODEL` (not committed; use `.env.example` as a template).
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Tech stack
 
-### Code Splitting
+- **React** (Create React App)
+- **OpenAI** – Responses API (vision + text) for narration script; Audio API (TTS) for speech.
+- **ffmpeg.wasm** – In-browser merge: video + video audio + narration, output MP4. No server required.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Notes
 
-### Analyzing the Bundle Size
+- Processing is **client-side only** (no backend).
+- **Large videos** – ffmpeg.wasm keeps files in memory. Very large inputs (e.g. >100 MB) can hit limits; shorter or smaller files are more reliable.
+- **Narration length** – Computed as `(duration_seconds / 60) * 100` words and passed as `{num_words}` into the prompt.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Scripts
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+| Command        | Description                |
+|----------------|----------------------------|
+| `npm start`    | Development server         |
+| `npm run build`| Production build           |
+| `npm test`     | Run tests                  |
